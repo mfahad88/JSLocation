@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,130 +9,61 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.muhammadfahad.jslocation.MainActivity">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:weightSum="1">
-        <!--<LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".1"
-            android:orientation="vertical">
+     <RelativeLayout
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         android:layout_above="@+id/editText">
 
-            <RadioGroup
+         <ScrollView
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:id="@+id/scrollView">
+             <LinearLayout
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="center_horizontal">
+
+                 <TextView
+                     android:layout_width="wrap_content"
+                     android:layout_height="wrap_content"
+                     android:text="Hello World!"
+                     android:id="@+id/textView"
+                     />
+             </LinearLayout>
+
+         </ScrollView>
+     </RelativeLayout>
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:singleLine="true"
+        android:hint="Radius"
+        android:layout_above="@+id/linearLayout"
+        android:id="@+id/editText" />
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_alignParentBottom="true"
+            android:id="@+id/linearLayout"
+            android:layout_centerHorizontal="true">
+            <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/locationGroup"
-                android:orientation="horizontal"
-                android:layout_gravity="center_horizontal">
-                <RadioButton
-                    android:id="@+id/GPS"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:padding="3dp"
-                    android:checked="true"
-                    android:text="GPS"/>
+                android:text="Location"
+                android:id="@+id/button"
+                android:padding="5dp"/>
 
-                <RadioButton
-                    android:id="@+id/Network"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:padding="3dp"
-                    android:checked="false"
-                    android:text="Network"/>
-            </RadioGroup>
-        </LinearLayout>-->
-        <!--<LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".1"
-            android:orientation="vertical">
-
-                <RadioGroup
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/locationCriteria"
-                    android:orientation="horizontal"
-                    android:layout_gravity="center">
-
-
-                    <RadioButton
-                        android:id="@+id/ACCURACY_FINE"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:padding="3dp"
-                        android:checked="true"
-                        android:text="ACCURACY_FINE"/>
-
-                    <RadioButton
-                        android:id="@+id/ACCURACY_COARSE"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:padding="3dp"
-                        android:checked="false"
-                        android:text="ACCURACY_COARSE"/>
-
-                </RadioGroup>
-        </LinearLayout>-->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".8"
-            android:orientation="vertical">
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:id="@+id/scrollView">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Hello World!"
-                    android:id="@+id/textView"/>
-            </ScrollView>
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".1"
-            android:orientation="vertical">
-
-            <EditText
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:inputType="number"
-                android:ems="10"
-                android:hint="Radius"
-                android:id="@+id/editText" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight=".1"
-            android:orientation="vertical">
-
-            <LinearLayout
-                android:layout_width="match_parent"
+            <Button
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:weightSum="1">
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Location"
-                    android:id="@+id/button"
-                    android:layout_weight=".5"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Stop"
-                    android:id="@+id/buttonStop"
-                    android:layout_weight=".5"/>
-            </LinearLayout>
+                android:text="Stop"
+                android:id="@+id/buttonStop"
+                android:layout_toRightOf="@id/button"
+                android:padding="5dp"/>
         </LinearLayout>
-
-    </LinearLayout>
-
-
-</LinearLayout>
+</RelativeLayout>

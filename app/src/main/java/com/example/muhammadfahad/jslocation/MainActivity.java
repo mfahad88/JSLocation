@@ -108,6 +108,24 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         System.exit(1);
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        criteria = new Criteria();
+        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+        criteria.setVerticalAccuracy(Criteria.ACCURACY_MEDIUM);
+        criteria.setHorizontalAccuracy(Criteria.ACCURACY_MEDIUM);
+        criteria.setPowerRequirement(Criteria.POWER_HIGH);
+        criteria.setBearingAccuracy(Criteria.ACCURACY_MEDIUM);
+        criteria.setSpeedAccuracy(Criteria.ACCURACY_MEDIUM);
+        criteria.setAltitudeRequired(true);
+        criteria.setAltitudeRequired(true);
+        criteria.setBearingRequired(true);
+        criteria.setSpeedRequired(true);
+        provider=locationManager.getBestProvider(criteria,true);
+    }
+
+
     @SuppressWarnings("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,18 +157,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         btnStop.setOnClickListener(this);
         locationManager=(LocationManager)getSystemService(LOCATION_SERVICE);
 
-        criteria = new Criteria();
-        criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        criteria.setVerticalAccuracy(Criteria.ACCURACY_LOW);
-        criteria.setHorizontalAccuracy(Criteria.ACCURACY_LOW);
-        criteria.setPowerRequirement(Criteria.POWER_HIGH);
-        criteria.setBearingAccuracy(Criteria.ACCURACY_LOW);
-        criteria.setSpeedAccuracy(Criteria.ACCURACY_LOW);
-        criteria.setAltitudeRequired(true);
-        criteria.setAltitudeRequired(true);
-        criteria.setBearingRequired(true);
-        criteria.setSpeedRequired(true);
-        provider=locationManager.getBestProvider(criteria,true);
+
 
         tv.setText("");
         Dexter.withActivity(this)
@@ -196,61 +203,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         if (location != null) {
             recId++;
             /*location.setLatitude(24.808443);
-           location.setLongitude(67.03604);
+           location.setLongitude(67.03604);*/
 
-            //tv.append(String.valueOf(location.getLatitude())+","+String.valueOf(location.getLongitude()));
             LocationAsync async =new LocationAsync();
-            async.execute(location);*/
-            try{
-
-
-                tv.append("Accuracy : "+String.valueOf(location.getAccuracy())+"\n");
-                tv.append("Altitude : "+String.valueOf(location.getAltitude())+"\n");
-                tv.append("Bearing : "+String.valueOf(location.getBearing())+"\n");
-                tv.append("ElapsedRealtimeNanos : "+String.valueOf(location.getElapsedRealtimeNanos())+"\n");
-                tv.append("Latitude : "+String.valueOf(location.getLatitude())+"\n");
-                tv.append("Longitude : "+String.valueOf(location.getLongitude())+"\n");
-                tv.append("Provider : "+String.valueOf(location.getProvider())+"\n");
-                tv.append("Speed : "+String.valueOf(((location.getSpeed()*3600)/1000))+"\n");
-                tv.append("Time : "+simpleDateFormat.format(new Date(Long.parseLong(String.valueOf(location.getTime()))))+"\n");
-                addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                tv.append("Address : "+String.valueOf(addresses.get(0).getAddressLine(0))+"\n");
-                tv.append("Known Name : "+String.valueOf(addresses.get(0).getFeatureName())+"\n");
-
-
-                request = new Request.Builder()
-                        .url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location="+location.getLatitude()+","+location.getLongitude()+"&radius="+radius+"&key=AIzaSyAMly2uKnHT14gr3sYXOKSrytvw25SlcsA")
-                        .build();
-
-                response = client.newCall(request).execute();
-                object = new JSONObject(response.body().string());
-                array = object.getJSONArray("results");
-                tv.append("PlaceName : "+array.getJSONObject(1).getString("name")+"\n");
-                tv.append("Radius : "+radius+"\n");
-                beanList.add(new DataBean(1,recId,"Accuracy",String.valueOf(location.getAccuracy()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Altitude",String.valueOf(location.getAltitude()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Bearing",String.valueOf(location.getBearing()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"ElapsedRealtimeNanos",String.valueOf(location.getElapsedRealtimeNanos()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Latitude",String.valueOf(location.getLatitude()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Longitude",String.valueOf(location.getLongitude()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Provider",String.valueOf(location.getProvider()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Speed",String.valueOf(((location.getSpeed()*3600)/1000)),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Time",simpleDateFormat.format(new Date(Long.parseLong(String.valueOf(location.getTime())))),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Address",String.valueOf(addresses.get(0).getAddressLine(0)),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Known Name",String.valueOf(addresses.get(0).getFeatureName()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"PlaceName",array.getJSONObject(1).getString("name"),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Radius",radius,new Date().toString()));
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-            dbHelperLoc.insertDetail(beanList);
-            if(beanList.size()>0){
-               /* for(int i=0;i<beanList.size();i++){
-                    tv.append(beanList.get(i).getAttribute()+" : "+beanList.get(i).getValue()+"\n");
-                }*/
-
-                Toast.makeText(MainActivity.this, "Record inserted...", Toast.LENGTH_SHORT).show();
-            }
+            async.execute(location);
 
         }
     }
@@ -277,9 +233,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             tv.setText("");
             if(!TextUtils.isEmpty(edtRadius.getText().toString().trim())) {
                 radius=edtRadius.getText().toString();
-                //Toast.makeText(MainActivity.this, provider+"...", Toast.LENGTH_SHORT).show();
                 Toast.makeText(MainActivity.this, "Location fetched inserting data...", Toast.LENGTH_SHORT).show();
-                locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, this, null);
+                locationManager.requestSingleUpdate(provider, this, null);
                 // locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,30000,0,this);
             }
         }
@@ -302,10 +257,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             try{
 
                 addresses = geocoder.getFromLocation(locations[0].getLatitude(), locations[0].getLongitude(), 1);
+                request = new Request.Builder()
+                        .url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location="+locations[0].getLatitude()+","+locations[0].getLongitude()+"&radius="+radius+"&key=AIzaSyAMly2uKnHT14gr3sYXOKSrytvw25SlcsA")
+                        .build();
 
-
-
-
+                response = client.newCall(request).execute();
+                object = new JSONObject(response.body().string());
+                array = object.getJSONArray("results");
                 beanList.add(new DataBean(1,recId,"Accuracy",String.valueOf(locations[0].getAccuracy()),new Date().toString()));
                 beanList.add(new DataBean(1,recId,"Altitude",String.valueOf(locations[0].getAltitude()),new Date().toString()));
                 beanList.add(new DataBean(1,recId,"Bearing",String.valueOf(locations[0].getBearing()),new Date().toString()));
@@ -317,15 +275,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 beanList.add(new DataBean(1,recId,"Time",simpleDateFormat.format(new Date(Long.parseLong(String.valueOf(locations[0].getTime())))),new Date().toString()));
                 beanList.add(new DataBean(1,recId,"Address",String.valueOf(addresses.get(0).getAddressLine(0)),new Date().toString()));
                 beanList.add(new DataBean(1,recId,"Known Name",String.valueOf(addresses.get(0).getFeatureName()),new Date().toString()));
-
-                request = new Request.Builder()
-                        .url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location="+locations[0].getLatitude()+","+locations[0].getLongitude()+"&radius="+radius+"&key=AIzaSyAMly2uKnHT14gr3sYXOKSrytvw25SlcsA")
-                        .build();
-
-                response = client.newCall(request).execute();
-                object = new JSONObject(response.body().string());
-                array = object.getJSONArray("results");
-
                 beanList.add(new DataBean(1,recId,"PlaceName",array.getJSONObject(1).getString("name"),new Date().toString()));
                 beanList.add(new DataBean(1,recId,"Radius",radius,new Date().toString()));
 
@@ -346,6 +295,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 }
 
                 Toast.makeText(MainActivity.this, "Record inserted...", Toast.LENGTH_SHORT).show();
+                dataBeen.clear();
             }
 
         }
