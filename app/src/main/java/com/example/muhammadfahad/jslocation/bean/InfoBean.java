@@ -4,11 +4,13 @@ public class InfoBean {
     private String mobileNo;
     private String cnicNo;
     private String channelId;
+    private String Income;
 
-    public InfoBean(String mobileNo, String cnicNo, String channelId) {
+    public InfoBean(String mobileNo, String cnicNo, String channelId, String income) {
         this.mobileNo = mobileNo;
         this.cnicNo = cnicNo;
         this.channelId = channelId;
+        Income = income;
     }
 
     public String getMobileNo() {
@@ -35,12 +37,21 @@ public class InfoBean {
         this.channelId = channelId;
     }
 
+    public String getIncome() {
+        return Income;
+    }
+
+    public void setIncome(String income) {
+        Income = income;
+    }
+
     @Override
     public String toString() {
         return "InfoBean{" +
-                "channelId='" + channelId + '\'' +
+                "mobileNo='" + mobileNo + '\'' +
                 ", cnicNo='" + cnicNo + '\'' +
-                ", mobileNo='" + mobileNo + '\'' +
+                ", channelId='" + channelId + '\'' +
+                ", Income='" + Income + '\'' +
                 '}';
     }
 }

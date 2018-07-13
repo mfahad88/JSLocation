@@ -10,13 +10,18 @@ public class DataBean {
     private String attribute;
     private String value;
     private String recordDate;
+    private String mobileIMEI;
+    private InfoBean infoBean;
 
-    public DataBean(int catId, int recId, String attribute, String value, String recordDate) {
+    public DataBean(int catId, int recId, String attribute, String value, String recordDate,String mobileIMEI, InfoBean infoBean) {
         this.catId = catId;
         this.recId = recId;
         this.attribute = attribute;
         this.value = value;
         this.recordDate = recordDate;
+        this.mobileIMEI = mobileIMEI;
+        this.infoBean = infoBean;
+
     }
 
     public int getCatId() {
@@ -59,6 +64,22 @@ public class DataBean {
         this.recordDate = recordDate;
     }
 
+    public InfoBean getInfoBean() {
+        return infoBean;
+    }
+
+    public void setInfoBean(InfoBean infoBean) {
+        this.infoBean = infoBean;
+    }
+
+    public String getMobileIMEI() {
+        return mobileIMEI;
+    }
+
+    public void setMobileIMEI(String mobileIMEI) {
+        this.mobileIMEI = mobileIMEI;
+    }
+
     @Override
     public String toString() {
         return "DataBean{" +
@@ -67,6 +88,8 @@ public class DataBean {
                 ", attribute='" + attribute + '\'' +
                 ", value='" + value + '\'' +
                 ", recordDate='" + recordDate + '\'' +
+                ", mobileIMEI='" + mobileIMEI + '\'' +
+                ", infoBean=" + infoBean +
                 '}';
     }
 }

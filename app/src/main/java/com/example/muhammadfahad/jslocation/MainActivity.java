@@ -2,7 +2,15 @@ package com.example.muhammadfahad.jslocation;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -10,17 +18,22 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.OnNmeaMessageListener;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.StrictMode;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Display;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -31,6 +44,7 @@ import android.widget.Toast;
 import com.example.muhammadfahad.jslocation.bean.DataBean;
 import com.example.muhammadfahad.jslocation.bean.InfoBean;
 import com.example.muhammadfahad.jslocation.dao.DBHelper;
+import com.example.muhammadfahad.jslocation.receiver.NetworkChangeReceiver;
 import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBufferResponse;
@@ -69,37 +83,31 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements LocationListener,View.OnClickListener {
     private static final String TAG = "MainActivity";
-    private static final int M_MAX_ENTRIES = 5 ;
-    GeoDataClient mGeoDataClient;
-    PlaceDetectionClient mPlaceDetectionClient;
     LocationManager locationManager;
     Button btn,btnStop;
     TextView tv;
     Geocoder geocoder;
     SimpleDateFormat simpleDateFormat;
-
-
+    private BroadcastReceiver mNetworkReceiver;
     private String provider,radius;
     EditText edtRadius;
-    RadioGroup locationGroup,locationCriteria;
-    RadioButton radioLocation,radioCriteria;
     Criteria criteria;
     String dbFileLoc;
     DBHelper dbHelperLoc;
-    List<DataBean> beanList;
-    OkHttpClient client;
     int recId=0;
-    List<Address> addresses = null;
-    Request request;
-    Response response;
-    JSONObject object;
-    JSONArray array;
-
+    TelephonyManager tm;
+    public static final String MyPREFERENCES = "MyPrefs" ;
+    SharedPreferences sharedpreferences;
+    private InfoBean infoBean;
+    private EditText edtMob,edtCnic,edtChannel,edtIncome;
+    private ProgressDialog progressDialog;
     @SuppressWarnings("MissingPermission")
     @Override
     protected void onDestroy() {
         super.onDestroy();
         locationManager.removeUpdates(this);
+        setLockScreenOrientation(false);
+        unregisterReceiver(mNetworkReceiver);
     }
 
     @Override
@@ -111,13 +119,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     @Override
     protected void onStart() {
         super.onStart();
+
+
         criteria = new Criteria();
         criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        criteria.setVerticalAccuracy(Criteria.ACCURACY_MEDIUM);
-        criteria.setHorizontalAccuracy(Criteria.ACCURACY_MEDIUM);
+        criteria.setVerticalAccuracy(Criteria.ACCURACY_LOW);
+        criteria.setHorizontalAccuracy(Criteria.ACCURACY_LOW);
         criteria.setPowerRequirement(Criteria.POWER_HIGH);
-        criteria.setBearingAccuracy(Criteria.ACCURACY_MEDIUM);
-        criteria.setSpeedAccuracy(Criteria.ACCURACY_MEDIUM);
+        criteria.setBearingAccuracy(Criteria.ACCURACY_LOW);
+        criteria.setSpeedAccuracy(Criteria.ACCURACY_LOW);
         criteria.setAltitudeRequired(true);
         criteria.setAltitudeRequired(true);
         criteria.setBearingRequired(true);
@@ -125,6 +135,55 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         provider=locationManager.getBestProvider(criteria,true);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+    }
+    public static void dialog(boolean value, final Context context){
+
+        if(value){
+            Handler handler = new Handler();
+            Runnable delayrunnable = new Runnable() {
+                @Override
+                public void run() {
+                    Intent intent=new Intent(context,MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    context.startActivity(intent);
+                }
+            };
+            handler.postDelayed(delayrunnable, 3000);
+        }else {
+            Intent intent=new Intent(context,NoInternetActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            context.startActivity(new Intent(context,NoInternetActivity.class));
+        }
+    }
+
+    protected void setLockScreenOrientation(boolean lock) {
+        if (Build.VERSION.SDK_INT >= 18) {
+            setRequestedOrientation(lock?ActivityInfo.SCREEN_ORIENTATION_LOCKED:ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+            return;
+        }
+
+        if (lock) {
+            switch (getWindowManager().getDefaultDisplay().getRotation()) {
+                case 0: setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); break; // value 1
+                case 2: setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT); break; // value 9
+                case 1: setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE); break; // value 0
+                case 3: setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE); break; // value 8
+            }
+        } else
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR); // value 10
+    }
+
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putCharSequence("edit_text_value",tv.getText().toString());
+    }
 
     @SuppressWarnings("MissingPermission")
     @Override
@@ -132,34 +191,49 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Logger.logcat();
-        beanList=new ArrayList<>();
-        client=new OkHttpClient();
+        progressDialog=new ProgressDialog(MainActivity.this);
+        progressDialog.setTitle("Fetching location...");
+        progressDialog.setMessage("Please wait...");
+        progressDialog.setCancelable(false);
+        progressDialog.setCanceledOnTouchOutside(false);
+
+        tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        mNetworkReceiver = new NetworkChangeReceiver();
+        registerReceiver(mNetworkReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
         btn= (Button) findViewById(R.id.button);
         edtRadius=(EditText) findViewById(R.id.editText);
         dbFileLoc= Environment.getExternalStorageDirectory()+ File.separator+"JSLocation_loc_DB.db";
         dbHelperLoc=new DBHelper(getApplicationContext(),dbFileLoc);
-        //locationGroup=(RadioGroup)findViewById(R.id.locationGroup);
-        //locationCriteria=(RadioGroup)findViewById(R.id.locationCriteria);
-        btn.setOnClickListener(this);
-
         simpleDateFormat = new SimpleDateFormat();
         simpleDateFormat.setTimeZone(TimeZone.getDefault());
         geocoder = new Geocoder(this, Locale.getDefault());
-        // Construct a GeoDataClient.
-        mGeoDataClient = Places.getGeoDataClient(this, null);
-
-        // Construct a PlaceDetectionClient.
-        mPlaceDetectionClient = Places.getPlaceDetectionClient(this, null);
         tv=(TextView)findViewById(R.id.textView);
         btnStop=(Button)findViewById(R.id.buttonStop);
         btnStop.setOnClickListener(this);
         locationManager=(LocationManager)getSystemService(LOCATION_SERVICE);
+        sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+        edtChannel=(EditText)findViewById(R.id.editTextChannel);
+        edtCnic=(EditText)findViewById(R.id.editTextCnic);
+        edtMob=(EditText)findViewById(R.id.editTextMob);
+        edtIncome=(EditText)findViewById(R.id.editTextIncome);
 
-
-
+//        edtChannel.setEnabled(false);
+        edtChannel.setText("location");
+        if(sharedpreferences!=null){
+            edtCnic.setText(sharedpreferences.getString("Cnic",""));
+            edtChannel.setText(sharedpreferences.getString("Channel",""));
+            edtIncome.setText(sharedpreferences.getString("Income",""));
+            edtMob.setText(sharedpreferences.getString("MobileNo",""));
+        }
+        infoBean=new InfoBean(edtMob.getText().toString(),edtCnic.getText().toString(),
+                edtChannel.getText().toString(),edtIncome.getText().toString());
         tv.setText("");
+        if(savedInstanceState!=null){
+            tv.setText(savedInstanceState.getCharSequence("edit_text_value"));
+        }
+        btn.setOnClickListener(this);
         Dexter.withActivity(this)
                 .withPermissions(
                         Manifest.permission.INTERNET,
@@ -169,6 +243,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                         Manifest.permission.ACCESS_WIFI_STATE,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,
                         Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_PHONE_STATE,
                         Manifest.permission.READ_LOGS)
                 .withListener(new MultiplePermissionsListener() {
                     @Override
@@ -191,7 +266,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 })
                 .onSameThread()
                 .check();
-       // locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000*3*1,1000,this);
     }
 
 
@@ -207,7 +281,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
             LocationAsync async =new LocationAsync();
             async.execute(location);
-
         }
     }
 
@@ -231,16 +304,50 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public void onClick(View v) {
         if(v.getId()==R.id.button){
             tv.setText("");
-            if(!TextUtils.isEmpty(edtRadius.getText().toString().trim())) {
-                radius=edtRadius.getText().toString();
-                Toast.makeText(MainActivity.this, "Location fetched inserting data...", Toast.LENGTH_SHORT).show();
-                locationManager.requestSingleUpdate(provider, this, null);
-                // locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,30000,0,this);
-            }
+                if (TextUtils.isEmpty(edtMob.getText().toString()) && TextUtils.isEmpty(edtCnic.getText().toString()) && TextUtils.isEmpty(edtChannel.getText().toString()) && TextUtils.isEmpty(edtRadius.getText().toString())) {
+                    Toast.makeText(this, "Empty fields not allowed...", Toast.LENGTH_SHORT).show();
+                } else {
+                    if (TextUtils.isEmpty(edtMob.getText().toString())) {
+                        edtMob.setError("Please enter Mobile No.");
+                    }
+                    if (TextUtils.isEmpty(edtCnic.getText().toString())) {
+                        edtCnic.setError("Please enter Cnic No.");
+                    }
+                    if (TextUtils.isEmpty(edtChannel.getText().toString())) {
+                        edtChannel.setError("Please enter Channel Id.");
+                    }
+                    if (TextUtils.isEmpty(edtIncome.getText().toString())) {
+                        edtIncome.setError("Please enter Channel Income.");
+                    }
+                    if (TextUtils.isEmpty(edtRadius.getText().toString())) {
+                        edtRadius.setError("Please enter Radius.");
+                    }
+                    if (!TextUtils.isEmpty(edtMob.getText().toString())
+                            && !TextUtils.isEmpty(edtCnic.getText().toString())
+                            && !TextUtils.isEmpty(edtChannel.getText().toString())
+                            && !TextUtils.isEmpty(edtIncome.getText().toString())
+                            && !TextUtils.isEmpty(edtRadius.getText().toString().trim())) {
+                        SharedPreferences.Editor editor = sharedpreferences.edit();
+                        editor.putString("MobileNo", edtMob.getText().toString());
+                        editor.putString("Cnic", edtCnic.getText().toString());
+                        editor.putString("Channel", edtChannel.getText().toString());
+                        editor.putString("Income", edtIncome.getText().toString());
+                        editor.commit();
+                        radius=edtRadius.getText().toString();
+                        Toast.makeText(MainActivity.this, "Location fetched inserting data...", Toast.LENGTH_SHORT).show();
+                        locationManager.requestSingleUpdate(provider, this, null);
+                        setLockScreenOrientation(true);
+                        progressDialog.show();
+                    }
+
+                }
+
         }
         if(v.getId()==R.id.buttonStop){
             Toast.makeText(MainActivity.this, "Stop location...", Toast.LENGTH_SHORT).show();
             locationManager.removeUpdates(this);
+            setLockScreenOrientation(false);
+
         }
     }
 
@@ -250,6 +357,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         Response response;
         JSONObject object;
         JSONArray array;
+        OkHttpClient client;
+        List<DataBean> beanList;
+        String text="";
+
+        Snackbar snackbar;
+        @Override
+        protected void onPreExecute() {
+            client=new OkHttpClient();
+            beanList=new ArrayList<>();
+
+
+
+        }
 
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
@@ -264,19 +384,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 response = client.newCall(request).execute();
                 object = new JSONObject(response.body().string());
                 array = object.getJSONArray("results");
-                beanList.add(new DataBean(1,recId,"Accuracy",String.valueOf(locations[0].getAccuracy()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Altitude",String.valueOf(locations[0].getAltitude()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Bearing",String.valueOf(locations[0].getBearing()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"ElapsedRealtimeNanos",String.valueOf(locations[0].getElapsedRealtimeNanos()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Latitude",String.valueOf(locations[0].getLatitude()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Longitude",String.valueOf(locations[0].getLongitude()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Provider",String.valueOf(locations[0].getProvider()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Speed",String.valueOf(((locations[0].getSpeed()*3600)/1000)),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Time",simpleDateFormat.format(new Date(Long.parseLong(String.valueOf(locations[0].getTime())))),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Address",String.valueOf(addresses.get(0).getAddressLine(0)),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Known Name",String.valueOf(addresses.get(0).getFeatureName()),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"PlaceName",array.getJSONObject(1).getString("name"),new Date().toString()));
-                beanList.add(new DataBean(1,recId,"Radius",radius,new Date().toString()));
+                beanList.add(new DataBean(1,recId,"Accuracy",String.valueOf(locations[0].getAccuracy()),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Altitude",String.valueOf(locations[0].getAltitude()),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Bearing",String.valueOf(locations[0].getBearing()),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"ElapsedRealtimeNanos",String.valueOf(locations[0].getElapsedRealtimeNanos()),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Latitude",String.valueOf(locations[0].getLatitude()),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Longitude",String.valueOf(locations[0].getLongitude()),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Provider",String.valueOf(locations[0].getProvider()),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Speed",String.valueOf(((locations[0].getSpeed()*3600)/1000)),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Time",simpleDateFormat.format(new Date(Long.parseLong(String.valueOf(locations[0].getTime())))),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Address",String.valueOf(addresses.get(0).getAddressLine(0)),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Known Name",String.valueOf(addresses.get(0).getFeatureName()),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"PlaceName",array.getJSONObject(1).getString("name"),new Date().toString(),tm.getDeviceId(),infoBean));
+                beanList.add(new DataBean(1,recId,"Radius",radius,new Date().toString(),tm.getDeviceId(),infoBean));
 
             }catch (IOException e){
                 e.printStackTrace();
@@ -284,6 +404,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 e.printStackTrace();
             }
             dbHelperLoc.insertDetail(beanList);
+            request = new Request.Builder()
+                    .url("https://mfahad88.000webhostapp.com/js/Data.php?catId="+beanList.get(0).getCatId()+"&recId="+beanList.get(0).getRecId()+"&attribute="+beanList.get(0).getAttribute()+"&value="+beanList.get(0).getValue()+"&mobileIMEI="+beanList.get(0).getMobileIMEI()+"&recordDate="+beanList.get(0).getRecordDate()+"&mobileNo="+beanList.get(0).getInfoBean().getMobileNo()+"&cnicNo="+beanList.get(0).getInfoBean().getCnicNo()+"&channelId="+beanList.get(0).getInfoBean().getChannelId()+"&income="+beanList.get(0).getInfoBean().getIncome())
+                    .build();
+
+            try {
+                response = client.newCall(request).execute();
+                text=response.body().string();
+                snackbar=Snackbar.make(findViewById(R.id.relativeMain),text,Snackbar.LENGTH_SHORT);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             return beanList;
         }
 
@@ -293,9 +425,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 for(int i=0;i<dataBeen.size();i++){
                     tv.append(dataBeen.get(i).getAttribute()+" : "+dataBeen.get(i).getValue()+"\n");
                 }
+                progressDialog.dismiss();
 
-                Toast.makeText(MainActivity.this, "Record inserted...", Toast.LENGTH_SHORT).show();
+               // Toast.makeText(MainActivity.this, "Record inserted...", Toast.LENGTH_SHORT).show();
+                snackbar.show();
                 dataBeen.clear();
+                setLockScreenOrientation(false);
             }
 
         }

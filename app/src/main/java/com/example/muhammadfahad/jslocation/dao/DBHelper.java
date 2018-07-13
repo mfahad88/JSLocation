@@ -29,7 +29,7 @@ public class DBHelper extends SQLiteOpenHelper {
       //db.execSQL("create table Category (catId INTEGER PRIMARY KEY unique not null, name text)");
       db.execSQL(
               "create table Detail " +
-                      "(id INTEGER PRIMARY KEY, catId integer,recId integer,attribute text, value text,status integer,mobileIMEI text,recordDate text,mobileNo text,cnicNo text,channelId text)"
+                      "(id INTEGER PRIMARY KEY, catId integer,recId integer,attribute text, value text,mobileIMEI text,recordDate text,mobileNo text,cnicNo text,channelId text,income text)"
       );
    }
 
@@ -52,6 +52,11 @@ public class DBHelper extends SQLiteOpenHelper {
             contentValues.put("attribute", dataBean.getAttribute());
             contentValues.put("value", dataBean.getValue());
             contentValues.put("recordDate", dataBean.getRecordDate());
+            contentValues.put("mobileIMEI",dataBean.getMobileIMEI());
+            contentValues.put("mobileNo",dataBean.getInfoBean().getMobileNo());
+            contentValues.put("cnicNo",dataBean.getInfoBean().getCnicNo());
+            contentValues.put("channelId",dataBean.getInfoBean().getChannelId());
+            contentValues.put("income",dataBean.getInfoBean().getIncome());
             db.insert("Detail", null, contentValues);
 
 //            Log.e("Details>>",contentValues.toString());

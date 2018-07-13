@@ -7,12 +7,121 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:id="@+id/relativeMain"
     tools:context="com.example.muhammadfahad.jslocation.MainActivity">
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/relativeHeader">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/mobile_no"
+            android:fontFamily="serif"
+            android:id="@+id/textviewMob"
+            android:layout_alignBottom="@+id/editTextMob"
+            android:gravity="center_vertical"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="03XXXXXXXXX"
+            android:inputType="phone"
+            android:singleLine="true"
+            android:maxLength="11"
+            android:layout_marginLeft="20dp"
+            android:fontFamily="serif"
+            android:layout_toRightOf="@id/textviewMob"
+            android:layout_alignParentRight="true"
+            android:id="@+id/editTextMob" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cnic_no"
+            android:layout_below="@id/textviewMob"
+            android:id="@+id/textviewCnic"
+            android:fontFamily="serif"
+            android:gravity="center_vertical"
+            android:layout_alignParentLeft="true"
+            android:layout_alignBottom="@+id/editTextCnic" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="serif"
+            android:hint="42XXXXXXXXXXX"
+            android:inputType="number"
+            android:singleLine="true"
+            android:maxLength="13"
+            android:layout_below="@id/editTextMob"
+            android:layout_alignParentRight="true"
+            android:layout_alignLeft="@+id/editTextMob"
+            android:layout_alignStart="@+id/editTextMob"
+            android:id="@+id/editTextCnic" />
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/channel_id"
+            android:layout_below="@id/textviewCnic"
+            android:id="@+id/textviewChannel"
+            android:fontFamily="serif"
+            android:gravity="center_vertical"
+            android:layout_alignParentLeft="true"
+            android:layout_alignBottom="@+id/editTextChannel" />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="serif"
+            android:hint="Test"
+            android:inputType="textCapSentences"
+            android:singleLine="true"
+            android:layout_below="@id/editTextCnic"
+            android:layout_alignParentRight="true"
+            android:layout_alignLeft="@+id/editTextMob"
+            android:layout_alignStart="@+id/editTextMob"
+            android:id="@+id/editTextChannel" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/income"
+            android:layout_below="@+id/textviewChannel"
+            android:id="@+id/textviewIncome"
+            android:fontFamily="serif"
+            android:gravity="center_vertical"
+            android:layout_alignParentLeft="true"
+            android:layout_alignLeft="@+id/editTextIncome"
+            android:layout_alignBottom="@+id/editTextIncome"
+            />
+
+        <EditText
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="serif"
+            android:hint="400000"
+            android:inputType="number"
+            android:singleLine="true"
+            android:id="@+id/editTextIncome"
+            android:layout_below="@id/editTextChannel"
+            android:layout_alignParentRight="true"
+            android:layout_alignLeft="@+id/editTextChannel"
+            android:layout_alignStart="@+id/editTextChannel"/>
+
+
+    </RelativeLayout>
 
      <RelativeLayout
          android:layout_width="match_parent"
          android:layout_height="match_parent"
-         android:layout_above="@+id/editText">
+         android:layout_above="@+id/editText"
+         android:layout_marginTop="10dp"
+         android:layout_below="@+id/relativeHeader">
 
          <ScrollView
              android:layout_width="match_parent"
