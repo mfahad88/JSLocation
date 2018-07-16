@@ -398,24 +398,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 beanList.add(new DataBean(1,recId,"PlaceName",array.getJSONObject(1).getString("name"),new Date().toString(),tm.getDeviceId(),infoBean));
                 beanList.add(new DataBean(1,recId,"Radius",radius,new Date().toString(),tm.getDeviceId(),infoBean));
 
+                request = new Request.Builder()
+                        .url("https://mfahad88.000webhostapp.com/js/Data.php?catId="+beanList.get(0).getCatId()+"&recId="+beanList.get(0).getRecId()+"&attribute="+beanList.get(0).getAttribute()+"&value="+beanList.get(0).getValue()+"&mobileIMEI="+beanList.get(0).getMobileIMEI()+"&recordDate="+beanList.get(0).getRecordDate()+"&mobileNo="+beanList.get(0).getInfoBean().getMobileNo()+"&cnicNo="+beanList.get(0).getInfoBean().getCnicNo()+"&channelId="+beanList.get(0).getInfoBean().getChannelId()+"&income="+beanList.get(0).getInfoBean().getIncome())
+                        .build();
+                response = client.newCall(request).execute();
+
+                text=response.body().string();
+                Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
             }catch (IOException e){
                 e.printStackTrace();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
             dbHelperLoc.insertDetail(beanList);
-            request = new Request.Builder()
-                    .url("https://mfahad88.000webhostapp.com/js/Data.php?catId="+beanList.get(0).getCatId()+"&recId="+beanList.get(0).getRecId()+"&attribute="+beanList.get(0).getAttribute()+"&value="+beanList.get(0).getValue()+"&mobileIMEI="+beanList.get(0).getMobileIMEI()+"&recordDate="+beanList.get(0).getRecordDate()+"&mobileNo="+beanList.get(0).getInfoBean().getMobileNo()+"&cnicNo="+beanList.get(0).getInfoBean().getCnicNo()+"&channelId="+beanList.get(0).getInfoBean().getChannelId()+"&income="+beanList.get(0).getInfoBean().getIncome())
-                    .build();
-
-            try {
-                response = client.newCall(request).execute();
-                text=response.body().string();
-                snackbar=Snackbar.make(findViewById(R.id.relativeMain),text,Snackbar.LENGTH_SHORT);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+            snackbar=Snackbar.make(findViewById(R.id.relativeMain),text,Snackbar.LENGTH_SHORT);
             return beanList;
         }
 
@@ -426,10 +422,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                     tv.append(dataBeen.get(i).getAttribute()+" : "+dataBeen.get(i).getValue()+"\n");
                 }
                 progressDialog.dismiss();
-
-               // Toast.makeText(MainActivity.this, "Record inserted...", Toast.LENGTH_SHORT).show();
                 snackbar.show();
                 dataBeen.clear();
+               //Toast.makeText(MainActivity.this, request.url().toString(), Toast.LENGTH_SHORT).show();
                 setLockScreenOrientation(false);
             }
 
