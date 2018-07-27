@@ -371,11 +371,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 e.printStackTrace();
             }
 
-
-
-
-            /*LocationAsync async =new LocationAsync();
-            async.execute(location);*/
         }
     }
 
@@ -447,91 +442,4 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         }
     }
-
-    public class LocationAsync extends AsyncTask<Location,Void,List<DataBean>>{
-        List<Address> addresses = null;
-        Request request;
-        Response response;
-        JSONObject object;
-        JSONArray array;
-        OkHttpClient client;
-        List<DataBean> beanList;
-        String text="";
-
-
-        @Override
-        protected void onPreExecute() {
-            client=new OkHttpClient();
-            beanList=new ArrayList<>();
-
-
-
-        }
-
-        @SuppressLint("MissingPermission")
-        @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
-        @Override
-        protected List<DataBean> doInBackground(Location... locations) {
-            try{
-
-                addresses = geocoder.getFromLocation(locations[0].getLatitude(), locations[0].getLongitude(), 1);
-                request = new Request.Builder()
-                        .url("https://maps.googleapis.com/maps/api/place/nearbysearch/json?location="+locations[0].getLatitude()+","+locations[0].getLongitude()+"&radius="+radius+"&key=AIzaSyAMly2uKnHT14gr3sYXOKSrytvw25SlcsA")
-                        .build();
-
-                response = client.newCall(request).execute();
-                object = new JSONObject(response.body().string());
-                array = object.getJSONArray("results");
-                beanList.add(new DataBean(1,recId,"Accuracy",String.valueOf(locations[0].getAccuracy()),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Altitude",String.valueOf(locations[0].getAltitude()),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Bearing",String.valueOf(locations[0].getBearing()),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"ElapsedRealtimeNanos",String.valueOf(locations[0].getElapsedRealtimeNanos()),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Latitude",String.valueOf(locations[0].getLatitude()),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Longitude",String.valueOf(locations[0].getLongitude()),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Provider",String.valueOf(locations[0].getProvider()),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Speed",String.valueOf(((locations[0].getSpeed()*3600)/1000)),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Time",simpleDateFormat.format(new Date(Long.parseLong(String.valueOf(locations[0].getTime())))),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Address",String.valueOf(addresses.get(0).getAddressLine(0)),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Known Name",String.valueOf(addresses.get(0).getFeatureName()),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"PlaceName",array.getJSONObject(1).getString("name"),new Date().toString(),tm.getDeviceId(),infoBean));
-                beanList.add(new DataBean(1,recId,"Radius",radius,new Date().toString(),tm.getDeviceId(),infoBean));
-
-            }catch (IOException e){
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            dbHelperLoc.insertDetail(beanList);
-
-            return beanList;
-        }
-
-        @Override
-        protected void onPostExecute(List<DataBean> dataBeen) {
-            if(dataBeen.size()>0){
-                for(int i=0;i<dataBeen.size();i++){
-                    tv.append(dataBeen.get(i).getAttribute()+" : "+dataBeen.get(i).getValue()+"\n");
-                    request = new Request.Builder()
-                            .url("https://mfahad88.000webhostapp.com/js/Data.php?catId=" + dataBeen.get(i).getCatId() + "&recId=" + dataBeen.get(i).getRecId() + "&attribute=" + dataBeen.get(i).getAttribute() + "&value=" + dataBeen.get(i).getValue() + "&mobileIMEI=" + dataBeen.get(i).getMobileIMEI() + "&recordDate=" + dataBeen.get(i).getRecordDate() + "&mobileNo=" + dataBeen.get(i).getInfoBean().getMobileNo() + "&cnicNo=" + dataBeen.get(i).getInfoBean().getCnicNo() + "&channelId=" + dataBeen.get(i).getInfoBean().getChannelId() + "&income=" + dataBeen.get(i).getInfoBean().getIncome())
-                            .build();
-                    try {
-                        response = client.newCall(request).execute();
-                        text=response.body().string();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-               // progressDialog.dismiss();
-
-
-               //Toast.makeText(MainActivity.this, request.url().toString(), Toast.LENGTH_SHORT).show();
-                setLockScreenOrientation(false);
-            }
-
-        }
-    }
-
-
-
 }
