@@ -26,5 +26,7 @@ dependencies {
     compile 'com.google.android.gms:play-services-places:11.6.0'
     compile 'com.squareup.okhttp3:okhttp:3.3.1'
     compile 'com.karumi:dexter:4.2.0'
+    compile 'com.squareup.retrofit2:retrofit:2.4.0'
+    compile 'com.squareup.retrofit2:converter-gson:2.4.0'
     compile files('libs/java-json.jar')
 }

@@ -1,6 +1,7 @@
 package com.example.muhammadfahad.jslocation;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -41,10 +42,17 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.muhammadfahad.jslocation.Interface.GoogleInterface;
+import com.example.muhammadfahad.jslocation.Interface.StatusInterface;
 import com.example.muhammadfahad.jslocation.bean.DataBean;
 import com.example.muhammadfahad.jslocation.bean.InfoBean;
+import com.example.muhammadfahad.jslocation.bean.Map;
+import com.example.muhammadfahad.jslocation.bean.Result;
+import com.example.muhammadfahad.jslocation.bean.StatusBean;
 import com.example.muhammadfahad.jslocation.dao.DBHelper;
 import com.example.muhammadfahad.jslocation.receiver.NetworkChangeReceiver;
+import com.example.muhammadfahad.jslocation.service.GoogleService;
+import com.example.muhammadfahad.jslocation.service.StatusService;
 import com.google.android.gms.location.places.GeoDataClient;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBufferResponse;
@@ -70,6 +78,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.security.Provider;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -80,6 +89,9 @@ import java.util.TimeZone;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Retrofit;
 
 public class MainActivity extends AppCompatActivity implements LocationListener,View.OnClickListener {
     private static final String TAG = "MainActivity";
@@ -101,6 +113,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private InfoBean infoBean;
     private EditText edtMob,edtCnic,edtChannel,edtIncome;
     private ProgressDialog progressDialog;
+    List<Address> addresses = null;
+    Request request;
+    Response response;
+    JSONObject object;
+    JSONArray array;
+    OkHttpClient client;
+    Retrofit service,statusService;
+    String text="";
+    List<DataBean> beanList;
+    GoogleInterface googleInterface;
+    StatusInterface statusInterface;
+    final static String KEY="AIzaSyAMly2uKnHT14gr3sYXOKSrytvw25SlcsA";
+    Call<Map> call;
+    Call<StatusBean> beanCall;
     @SuppressWarnings("MissingPermission")
     @Override
     protected void onDestroy() {
@@ -121,18 +147,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         super.onStart();
 
 
-        criteria = new Criteria();
+        /*criteria = new Criteria();
         criteria.setAccuracy(Criteria.ACCURACY_FINE);
-        criteria.setVerticalAccuracy(Criteria.ACCURACY_LOW);
-        criteria.setHorizontalAccuracy(Criteria.ACCURACY_LOW);
         criteria.setPowerRequirement(Criteria.POWER_HIGH);
-        criteria.setBearingAccuracy(Criteria.ACCURACY_LOW);
-        criteria.setSpeedAccuracy(Criteria.ACCURACY_LOW);
-        criteria.setAltitudeRequired(true);
-        criteria.setAltitudeRequired(true);
-        criteria.setBearingRequired(true);
-        criteria.setSpeedRequired(true);
-        provider=locationManager.getBestProvider(criteria,true);
+        criteria.setAltitudeRequired(false);
+        criteria.setBearingRequired(false);
+        criteria.setSpeedRequired(false);
+        criteria.setCostAllowed(false);
+        provider=locationManager.getBestProvider(criteria,true);*/
     }
 
     @Override
@@ -196,7 +218,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         progressDialog.setMessage("Please wait...");
         progressDialog.setCancelable(false);
         progressDialog.setCanceledOnTouchOutside(false);
-
+        service = GoogleService.getInstance();
+        statusService=StatusService.getInstance();
+        googleInterface = service.create(GoogleInterface.class);
+        statusInterface=statusService.create(StatusInterface.class);
         tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         mNetworkReceiver = new NetworkChangeReceiver();
         registerReceiver(mNetworkReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
@@ -270,17 +295,87 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
 
 
+    @SuppressLint("MissingPermission")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     @Override
-    public void onLocationChanged(Location location) {
+    public void onLocationChanged(final Location location) {
 
         if (location != null) {
             recId++;
-            /*location.setLatitude(24.808443);
-           location.setLongitude(67.03604);*/
+            beanList = new ArrayList<>();
 
-            LocationAsync async =new LocationAsync();
-            async.execute(location);
+
+            try {
+
+                addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+
+
+                call = googleInterface.getLocation(String.valueOf(location.getLatitude())+","+String.valueOf(location.getLongitude()),edtRadius.getText().toString(),KEY);
+
+                call.enqueue(new Callback<Map>() {
+                    @Override
+                    public void onResponse(Call<Map> call, retrofit2.Response<Map> response) {
+                        List<Result> list=response.body().getResults();
+                        if(list.size()>0 && list!=null){
+
+                            beanList.add(new DataBean(1,recId,"Accuracy",String.valueOf(location.getAccuracy()),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Altitude",String.valueOf(location.getAltitude()),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Bearing",String.valueOf(location.getBearing()),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"ElapsedRealtimeNanos",String.valueOf(location.getElapsedRealtimeNanos()),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Latitude",String.valueOf(location.getLatitude()),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Longitude",String.valueOf(location.getLongitude()),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Provider",String.valueOf(location.getProvider()),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Speed",String.valueOf(((location.getSpeed()*3600)/1000)),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Time",simpleDateFormat.format(new Date(Long.parseLong(String.valueOf(location.getTime())))),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Address",String.valueOf(addresses.get(0).getAddressLine(0)),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Known Name",String.valueOf(addresses.get(0).getFeatureName()),new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"Radius",radius,new Date().toString(),tm.getDeviceId(),infoBean));
+                            beanList.add(new DataBean(1,recId,"PlaceName",list.get(1).getName(),new Date().toString(),tm.getDeviceId(),infoBean));
+                        }
+
+                        dbHelperLoc.insertDetail(beanList);
+                        for(int i=0;i<beanList.size();i++){
+                            tv.append(beanList.get(i).getAttribute()+":"+beanList.get(i).getValue()+"\n");
+                            beanCall=statusInterface.insert(beanList.get(i).getCatId(),beanList.get(i).getRecId(),beanList.get(i).getAttribute(),beanList.get(i).getValue(),
+                                                            beanList.get(i).getMobileIMEI(),beanList.get(i).getRecordDate(),beanList.get(i).getInfoBean().getMobileNo(),
+                                                            beanList.get(i).getInfoBean().getCnicNo(),beanList.get(i).getInfoBean().getChannelId(),beanList.get(i).getInfoBean().getIncome());
+
+
+                            beanCall.enqueue(new Callback<StatusBean>() {
+                                @Override
+                                public void onResponse(Call<StatusBean> call, retrofit2.Response<StatusBean> response) {
+
+
+                                }
+
+                                @Override
+                                public void onFailure(Call<StatusBean> call, Throwable t) {
+                                    Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                        }
+                        tv.append("------------------------------------------------------\n");
+                        beanList.clear();
+
+                    }
+
+                    @Override
+                    public void onFailure(Call<Map> call, Throwable t) {
+                        Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+
+
+            /*LocationAsync async =new LocationAsync();
+            async.execute(location);*/
         }
     }
 
@@ -303,6 +398,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onClick(View v) {
         if(v.getId()==R.id.button){
+
             tv.setText("");
                 if (TextUtils.isEmpty(edtMob.getText().toString()) && TextUtils.isEmpty(edtCnic.getText().toString()) && TextUtils.isEmpty(edtChannel.getText().toString()) && TextUtils.isEmpty(edtRadius.getText().toString())) {
                     Toast.makeText(this, "Empty fields not allowed...", Toast.LENGTH_SHORT).show();
@@ -335,9 +431,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                         editor.commit();
                         radius=edtRadius.getText().toString();
                         Toast.makeText(MainActivity.this, "Location fetched inserting data...", Toast.LENGTH_SHORT).show();
-                        locationManager.requestSingleUpdate(provider, this, null);
+                        locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, this, null);
+                        locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, this, null);
                         setLockScreenOrientation(true);
-                        progressDialog.show();
+                        //progressDialog.show();
                     }
 
                 }
@@ -361,7 +458,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         List<DataBean> beanList;
         String text="";
 
-        Snackbar snackbar;
+
         @Override
         protected void onPreExecute() {
             client=new OkHttpClient();
@@ -371,6 +468,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         }
 
+        @SuppressLint("MissingPermission")
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
         @Override
         protected List<DataBean> doInBackground(Location... locations) {
@@ -398,20 +496,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 beanList.add(new DataBean(1,recId,"PlaceName",array.getJSONObject(1).getString("name"),new Date().toString(),tm.getDeviceId(),infoBean));
                 beanList.add(new DataBean(1,recId,"Radius",radius,new Date().toString(),tm.getDeviceId(),infoBean));
 
-                request = new Request.Builder()
-                        .url("https://mfahad88.000webhostapp.com/js/Data.php?catId="+beanList.get(0).getCatId()+"&recId="+beanList.get(0).getRecId()+"&attribute="+beanList.get(0).getAttribute()+"&value="+beanList.get(0).getValue()+"&mobileIMEI="+beanList.get(0).getMobileIMEI()+"&recordDate="+beanList.get(0).getRecordDate()+"&mobileNo="+beanList.get(0).getInfoBean().getMobileNo()+"&cnicNo="+beanList.get(0).getInfoBean().getCnicNo()+"&channelId="+beanList.get(0).getInfoBean().getChannelId()+"&income="+beanList.get(0).getInfoBean().getIncome())
-                        .build();
-                response = client.newCall(request).execute();
-
-                text=response.body().string();
-                Toast.makeText(MainActivity.this, text, Toast.LENGTH_SHORT).show();
             }catch (IOException e){
                 e.printStackTrace();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
             dbHelperLoc.insertDetail(beanList);
-            snackbar=Snackbar.make(findViewById(R.id.relativeMain),text,Snackbar.LENGTH_SHORT);
+
             return beanList;
         }
 
@@ -420,10 +511,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             if(dataBeen.size()>0){
                 for(int i=0;i<dataBeen.size();i++){
                     tv.append(dataBeen.get(i).getAttribute()+" : "+dataBeen.get(i).getValue()+"\n");
+                    request = new Request.Builder()
+                            .url("https://mfahad88.000webhostapp.com/js/Data.php?catId=" + dataBeen.get(i).getCatId() + "&recId=" + dataBeen.get(i).getRecId() + "&attribute=" + dataBeen.get(i).getAttribute() + "&value=" + dataBeen.get(i).getValue() + "&mobileIMEI=" + dataBeen.get(i).getMobileIMEI() + "&recordDate=" + dataBeen.get(i).getRecordDate() + "&mobileNo=" + dataBeen.get(i).getInfoBean().getMobileNo() + "&cnicNo=" + dataBeen.get(i).getInfoBean().getCnicNo() + "&channelId=" + dataBeen.get(i).getInfoBean().getChannelId() + "&income=" + dataBeen.get(i).getInfoBean().getIncome())
+                            .build();
+                    try {
+                        response = client.newCall(request).execute();
+                        text=response.body().string();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 }
-                progressDialog.dismiss();
-                snackbar.show();
-                dataBeen.clear();
+               // progressDialog.dismiss();
+
+
                //Toast.makeText(MainActivity.this, request.url().toString(), Toast.LENGTH_SHORT).show();
                 setLockScreenOrientation(false);
             }
